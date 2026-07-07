@@ -1,7 +1,9 @@
+import os
 import asyncio
 from aiogram import Bot, Dispatcher
 from aiogram.enums import ParseMode
 from aiogram.client.default import DefaultBotProperties
+from aiohttp import web  # Imported to handle Render's port binding
 
 from config import BOT_TOKEN
 from database import init_db
@@ -15,6 +17,25 @@ from handlers.report import router as report_router
 from handlers.stock import router as stock_router      # Added
 from handlers.expense import router as expense_router  # Added
 
+# --- Render Port Binding Handler ---
+async def handle_home(request):
+    return web.Response(text="Bot is alive!")
+
+async def start_web_server():
+    app = web.Application()
+    app.router.add_get('/', handle_home)
+    
+    # Render passes the port dynamically via the PORT environment variable
+    port = int(os.environ.get("PORT", 8080))
+    
+    runner = web.AppRunner(app)
+    await runner.setup()
+    site = web.TCPSite(runner, '0.0.0.0', port)
+    
+    print(f"🌐 Web server listening on port {port}")
+    await site.start()
+
+# --- Main Execution ---
 async def main():
     bot = Bot(token=BOT_TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
     dp = Dispatcher()
@@ -29,6 +50,10 @@ async def main():
     dp.include_router(expense_router)  # Included
 
     init_db()
+    
+    # Start the web server concurrently alongside the bot
+    await start_web_server()
+    
     print("🚀 Bot is running flawlessly...")
     await dp.start_polling(bot)
 
