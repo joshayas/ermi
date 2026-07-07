@@ -36,6 +36,7 @@ async def start_web_server():
     await site.start()
 
 # --- Main Execution ---
+# --- Main Execution ---
 async def main():
     bot = Bot(token=BOT_TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
     dp = Dispatcher()
@@ -46,16 +47,18 @@ async def main():
     dp.include_router(sell_router)
     dp.include_router(search_router)
     dp.include_router(report_router)
-    dp.include_router(stock_router)    # Included
-    dp.include_router(expense_router)  # Included
+    dp.include_router(stock_router)    
+    dp.include_router(expense_router)  
 
     init_db()
     
-    # Start the web server concurrently alongside the bot
-    await start_web_server()
+    print("🚀 Starting web server and Telegram bot concurrently...")
     
-    print("🚀 Bot is running flawlessly...")
-    await dp.start_polling(bot)
+    # Run BOTH the web server and the bot pooling at the same time
+    await asyncio.gather(
+        start_web_server(),
+        dp.start_polling(bot)
+    )
 
 if __name__ == "__main__":
     asyncio.run(main())
